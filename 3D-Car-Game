@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Car Stunt Racing Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Arial Black', sans-serif;
+      background: #000;
+    }
+
+    #game-ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      z-index: 10;
+      text-align: center;
+    }
+
+    #score {
+      font-size: 2em;
+      color: #00ffcc;
+      margin-bottom: 10px;
+      font-weight: bold;
+      text-shadow: 2px 2px #000;
+    }
+
+    .btn {
+      background-color: transparent;
+      border: 2px solid #00ffcc;
+      color: #00ffcc;
+      padding: 10px 20px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #00ffcc;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-ui">
+    <div id="score">Score: 0</div>
+    <button class="btn" onclick="resetGame()">RESET</button>
+  </div>
+  <script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three/examples/jsm/controls/OrbitControls';
+
+    let scene, camera, renderer, car, controls;
+    let score = 0;
+    const scoreDisplay = document.getElementById("score");
+
+    init();
+    animate();
+
+    function init() {
+      // Scene Setup
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x101010);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 10, 25);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+      dirLight.position.set(10, 20, 10);
+      scene.add(dirLight);
+
+      // Ground
+      const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      scene.add(ground);
+
+      // Car (Simple Box)
+      const carGeo = new THREE.BoxGeometry(2, 1, 4);
+      const carMat = new THREE.MeshStandardMaterial({ color: 0xff2222 });
+      car = new THREE.Mesh(carGeo, carMat);
+      car.position.y = 1;
+      scene.add(car);
+
+      // Stunt Ramps
+      createRamp(0, 0, -30);
+      createRamp(10, 0, -60);
+      createRamp(-10, 0, -90);
+
+      // Controls
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enablePan = false;
+      controls.maxPolarAngle = Math.PI / 2.5;
+
+      window.addEventListener('resize', onWindowResize);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    function createRamp(x, y, z) {
+      const rampGeo = new THREE.BoxGeometry(6, 0.5, 12);
+      const rampMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc });
+      const ramp = new THREE.Mesh(rampGeo, rampMat);
+      ramp.position.set(x, y + 0.25, z);
+      ramp.rotation.x = -Math.PI / 8;
+      scene.add(ramp);
+    }
+
+    function handleKeyDown(e) {
+      switch (e.key) {
+        case 'ArrowUp':
+          car.position.z -= 1;
+          score++;
+          break;
+        case 'ArrowDown':
+          car.position.z += 1;
+          break;
+        case 'ArrowLeft':
+          car.position.x -= 1;
+          break;
+        case 'ArrowRight':
+          car.position.x += 1;
+          break;
+        case ' ':
+          car.position.y += 0.5;
+          setTimeout(() => (car.position.y -= 0.5), 300);
+          score += 2;
+          break;
+      }
+      updateScore();
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    function resetGame() {
+      car.position.set(0, 1, 0);
+      score = 0;
+      updateScore();
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
